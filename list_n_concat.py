@@ -32,12 +32,24 @@ def find_matching_fasta_files(bin_names, directory):
                         matching_fasta_files.append(os.path.join(root, file))
     return matching_fasta_files
 
+
 # Function to concatenate fasta files into a single file
 def concatenate_fasta_files(input_files, output_file):
+    print(f"Processing {len(input_files)} input fasta files...")
+    # Create a set to store the unique headers
+    seen_headers = set()
+
+    num_sequences_concatenated = 0
+
+    # Open the output file for writing
     with open(output_file, 'w') as output_handle:
         for input_file in input_files:
             for record in SeqIO.parse(input_file, 'fasta'):
-                SeqIO.write(record, output_handle, 'fasta')
+                if record.id not in seen_headers:
+                    seen_headers.add(record.id)
+                    SeqIO.write(record, output_handle, 'fasta')
+                    num_sequences_concatenated += 1
+    return num_sequences_concatenated
 
 bin_names = []
 with open (args.bin_list, 'r') as csvfile:
@@ -50,12 +62,12 @@ bin_match_fasta = find_matching_fasta_files(bin_names, args.input_directory)
 
 if bin_match_fasta:
     # Output file to save the concatenated sequences
-    output_file = "all_drep_16s.fasta"
+    output_file = "new_all_drep_16s.fasta"
     output_path = os.path.join(output_directory, output_file)
 
     # Concatenate the matching fasta files into a single file
-    concatenate_fasta_files(bin_match_fasta, output_path)
+    num_file_cat = concatenate_fasta_files(bin_match_fasta, output_path)
 
-    print(f"Concatenated {len(bin_match_fasta)} fasta files into {output_path}")
+    print(f"Concatenated {num_file_cat} fasta files into {output_path}")
 else:
     print("No matching fasta files found.")
